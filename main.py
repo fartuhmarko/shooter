@@ -62,7 +62,13 @@ class Enemy (Hero):
             self.speed = random.randint(1,4)
             self.rect.y = -100
 
-
+class Asteroid(Hero):
+    def move(self):
+        self.rect.y += self.speed
+        self.rect.x += self.speed
+        if self.rect.y > 560 or self.rect.x > 750:
+            self.rect.x = random.randint(-200,565)
+            self.rect.y = -random.randint(50,150)
 
 
         
@@ -76,9 +82,16 @@ enemys = sprite.Group()
 for i in range(5):
     Enemy1= Enemy(random.randint(100,565), -100, 100, 50, random.randint(1,4), "ufo.png" )
     enemys.add(Enemy1)
+    
+asteroids = sprite.Group()
 
+for i in range(5):
+    asteroid= Asteroid(random.randint(100,565), -100, 100, 50, random.randint(1,4), "asteroid.png" )
+    asteroids.add(asteroid)
 
 font.init()
+font_win = font.Font(None, 60)
+font_lose = font.Font(None, 60)
 
 font1 = font.Font(None, 50)
 font2 = font.Font(None, 50)
@@ -90,7 +103,7 @@ finish = False
 
 
 lifes = 3
-
+killed = 0
 while Game:
     for e in event.get():
         if e.type == QUIT:
@@ -100,52 +113,81 @@ while Game:
             if e.key == K_SPACE:
                 rocket1.fire()
 
+            if e.key == K_r:
+                lifes = 3
+                killed = 0
+                counter = 0
+                finish = False
+                for i in enemys:
+                    i.rect.y = -random.randint(50,200)
+                    i.rect.x = random.randint(50, 565)
+                for i in asteroid:
+                    i.rect.y = -random.randint(50,200)
+                    i.rect.x = random.randint(-200,200)
+
     window.blit(background, (0, 0))
-    killed = 0
+   
     if finish!= True:
 
         rocket1.reset()
         rocket1.move()
         
         window.blit(font1.render(f"Лічильник: {counter}", True, (255,255,255)), (15,10))
-        window.blit(font2.render(f"Збито: {monster_kill}", True, (255,255,255)), (15,50))
+        window.blit(font2.render(f"Збито: {killed}", True, (255,255,255)), (15,50))
         window.blit(font3.render(f"Життя: {lifes}", True, (255,255,255)), (15,90))
-        window.blit(font4.render(f"Збитих ворогів: {killed}", True, (255,255,255)), (15,130))
+        
 
         for i in enemys:
             i.reset()
             i.move()
 
-
+        for a in asteroids:
+            a.reset()
+            a.move()
 
         for b in bullets:
             b.reset()
             b.move()
     
+        if counter >= 5:
+            finish = True
+
+
         list_collides = sprite.spritecollide(rocket1, enemys, False)       
         for collide in list_collides:
             if collide:
                 lifes -= 1
+                if lifes ==0:
+                    finish = True
                 for i in enemys:
-                    i.rect.y = -100
-                    if lifes == 0:
-                        finish = True
-                        i.rect.y = -100
-                        i.rect.x = random.randint(50, 565)
+                    i.rect.y = random.randint(50,200)
+                    i.rect.x = random.randint(50, 565)
+                    
     
         list_collides = sprite.groupcollide(enemys, bullets, True, False)
         for collide in list_collides:
             if collide:
                 killed +=1
+                if killed ==10:
+                    finish = True
                 Enemy1 = Enemy(random.randint(50,565), -100,100,30, random.randint(1,4), "ufo.png")
                 enemys.add(Enemy1)
-
-
-                
-
-
+        list_collides = sprite.spritecollide(rocket1, asteroids, True)
+        for collide in list_collides:
+            if collide:
+                lifes -=1
+                asteroid = Asteroid(random.randint(-200, 200), -random.randint(50,150), 30,30,random.randint(1,3), "asteroid.png")
+                asteroid.add(asteroids)
+    if finish == True:
+        if killed == 10:
+            window.blit(font_win.render("YOU WIN", True, (0,255,0)), (300,200))
+    
+        if lifes == 0 or counter == 5:
+            window.blit(font_lose.render("YOU LOSE", True, (255,0,0)), (300,200))
+        
         
 
+        window.blit(font1.render(f"Щоб почати спочатку нажміть R", True, (255,255,255)), (50,300))
        
     clock.tick(60)
     display.update()
