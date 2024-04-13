@@ -1,14 +1,20 @@
 from pygame import *
 import random
+from time import time as timer
 window = display.set_mode((700, 500))
 clock = time.Clock()
 mixer.init()
 
 space = mixer.Sound("space.ogg")
 space.play()
+space.set_volume(0.2)
+fire_sound = mixer.Sound("fire.ogg")
+fire_sound.set_volume(0.2)
 background = image.load("galaxy.jpg")
 background = transform.scale(background, (700,500))
 
+width = 700
+height = 500
 class Hero(sprite.Sprite):
     def __init__(self, x, y, width, height, speed, image_name="rocket.png"):
         super().__init__()
@@ -93,10 +99,11 @@ font.init()
 font_win = font.Font(None, 60)
 font_lose = font.Font(None, 60)
 
-font1 = font.Font(None, 50)
-font2 = font.Font(None, 50)
-font3 = font.Font(None, 50)
-font4 = font.Font(None, 50)
+font1 = font.SysFont("Times New Romans", 30)
+font2 = font.SysFont("Times New Romans", 30)
+font3 = font.SysFont("Times New Romans", 30)
+font4 = font.SysFont("Times New Romans", 30)
+font5 = font.SysFont("Times New Romans", 30)
 Game = True
 
 finish = False
@@ -104,6 +111,11 @@ finish = False
 
 lifes = 3
 killed = 0
+
+num_bullets = 10
+
+rel_time = False
+
 while Game:
     for e in event.get():
         if e.type == QUIT:
@@ -111,7 +123,14 @@ while Game:
 
         if e.type == KEYDOWN:
             if e.key == K_SPACE:
-                rocket1.fire()
+                if num_bullets > 0 and rel_time is False:
+                    num_bullets -= 1
+                    rocket1.fire()
+
+                if num_bullets == 0 and rel_time is False:
+                    rel_time = True
+                    last_time = timer()
+                    fire_sound.play()
 
             if e.key == K_r:
                 lifes = 3
@@ -121,7 +140,7 @@ while Game:
                 for i in enemys:
                     i.rect.y = -random.randint(50,200)
                     i.rect.x = random.randint(50, 565)
-                for i in asteroid:
+                for i in asteroids:
                     i.rect.y = -random.randint(50,200)
                     i.rect.x = random.randint(-200,200)
 
@@ -152,6 +171,15 @@ while Game:
         if counter >= 5:
             finish = True
 
+        if rel_time is True:
+            new_time = timer()
+            if new_time - last_time < 3:
+                reload_screen = font5.render("WAIT, RELOAD...", 1, (150, 0, 0))
+                window.blit (reload_screen, (250, 460))
+            else:
+                num_bullets = 10
+                rel_time = False
+
 
         list_collides = sprite.spritecollide(rocket1, enemys, False)       
         for collide in list_collides:
@@ -172,22 +200,25 @@ while Game:
                     finish = True
                 Enemy1 = Enemy(random.randint(50,565), -100,100,30, random.randint(1,4), "ufo.png")
                 enemys.add(Enemy1)
+
         list_collides = sprite.spritecollide(rocket1, asteroids, True)
+
         for collide in list_collides:
             if collide:
                 lifes -=1
                 asteroid = Asteroid(random.randint(-200, 200), -random.randint(50,150), 30,30,random.randint(1,3), "asteroid.png")
                 asteroid.add(asteroids)
+
     if finish == True:
         if killed == 10:
-            window.blit(font_win.render("YOU WIN", True, (0,255,0)), (300,200))
+            window.blit(font_win.render("YOU WIN", True, (0,255,0)), (width / 2 - 150, height / 2 - 50))
     
         if lifes == 0 or counter == 5:
-            window.blit(font_lose.render("YOU LOSE", True, (255,0,0)), (300,200))
+            window.blit(font_lose.render("YOU LOSE", True, (255,0,0)), (width / 2 - 150, height / 2 - 50))
         
         
 
-        window.blit(font1.render(f"Щоб почати спочатку нажміть R", True, (255,255,255)), (50,300))
+        window.blit(font1.render(f"Щоб почати спочатку нажміть R", True, (255,255,255)), (width / 2 - 150, height / 2 + 100))
        
     clock.tick(60)
     display.update()
